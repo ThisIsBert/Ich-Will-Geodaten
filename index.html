@@ -207,6 +207,23 @@
         return L.latLngBounds([minlat, minlon], [maxlat, maxlon]);
     }
 
+    function resolveAreaGeometryTarget(type, id) {
+        if (type !== 'area') {
+            return { type, id, sourceType: type, sourceId: id };
+        }
+        const areaId = Number(id);
+        if (!Number.isFinite(areaId)) {
+            return null;
+        }
+        if (areaId >= 3600000000) {
+            return { type: 'relation', id: areaId - 3600000000, sourceType: 'area', sourceId: id };
+        }
+        if (areaId >= 2400000000) {
+            return { type: 'way', id: areaId - 2400000000, sourceType: 'area', sourceId: id };
+        }
+        return null;
+    }
+
     async function highlightObjectOnMap(type, id, domElement) {
         document.querySelectorAll('.object-item').forEach(i => i.classList.remove('selected'));
         domElement.classList.add('selected');
@@ -214,8 +231,19 @@
         loader.style.display = 'flex';
         resetSelection();
 
-        if (type === 'relation') {
-            const previewQuery = `[out:json][timeout:180][maxsize:134217728]; relation(${id}); out center bb;`;
+        const target = resolveAreaGeometryTarget(type, id);
+        if (!target) {
+            errorBox.style.display = 'block';
+            errorBox.innerText = "Area kann nicht auf Way/Relation zurückgeführt werden.";
+            loader.style.display = 'none';
+            return;
+        }
+
+        const queryType = target.type;
+        const queryId = target.id;
+
+        if (queryType === 'relation') {
+            const previewQuery = `[out:json][timeout:180][maxsize:134217728]; relation(${queryId}); out center bb;`;
             try {
                 const previewJson = await fetchOverpassJson(previewQuery, {
                     maxWaitMs: MAX_WAIT_GEOM_MS,
@@ -224,7 +252,7 @@
                         document.getElementById('loading-text').innerText = msg;
                     }
                 });
-                const relation = (previewJson.elements || []).find(el => el.type === 'relation' && el.id === id);
+                const relation = (previewJson.elements || []).find(el => el.type === 'relation' && el.id === queryId);
                 const bounds = boundsFromElement(relation);
                 if (bounds && bounds.isValid()) {
                     if (highlightLayer) map.removeLayer(highlightLayer);
@@ -253,7 +281,7 @@
             }
         }
 
-        const query = `[out:json][timeout:180][maxsize:134217728]; ${type}(${id}); out geom;`;
+        const query = `[out:json][timeout:180][maxsize:134217728]; ${queryType}(${queryId}); out geom;`;
         
         try {
             const osmJson = await fetchOverpassJson(query, {
@@ -265,7 +293,7 @@
             });
 
             const geojson = osmtogeojson(osmJson);
-            geojson.features = geojson.features.filter(f => f.id === `${type}/${id}`);
+            geojson.features = geojson.features.filter(f => f.id === `${queryType}/${queryId}`);
 
             if (geojson.features.length === 0) throw new Error("Keine Geometrie gefunden.");
 
