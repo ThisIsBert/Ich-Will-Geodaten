@@ -107,9 +107,15 @@
         let attempt = 0;
 
         while (true) {
+            const elapsed = Date.now() - start;
+            if (elapsed >= maxWaitMs) {
+                throw new Error("Die Abfrage dauert zu lange und wurde abgebrochen.");
+            }
+            const remainingMs = maxWaitMs - elapsed;
             attempt += 1;
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
+            const effectiveTimeoutMs = Math.min(requestTimeoutMs, remainingMs);
+            const timeoutId = setTimeout(() => controller.abort(), effectiveTimeoutMs);
             let text = '';
             let status = 0;
 
@@ -127,7 +133,7 @@
                 }
                 const waitMs = Math.min(RETRY_BASE_DELAY_MS * attempt, RETRY_MAX_DELAY_MS);
                 onWaitMessage(`Verbindung unterbrochen. Warte ${Math.round(waitMs / 1000)}s...`);
-                await sleep(waitMs);
+                await sleep(Math.min(waitMs, maxWaitMs - (Date.now() - start)));
                 continue;
             } finally {
                 clearTimeout(timeoutId);
@@ -142,7 +148,7 @@
                     }
                     const waitMs = Math.min(RETRY_BASE_DELAY_MS * attempt, RETRY_MAX_DELAY_MS);
                     onWaitMessage(`Server beschäftigt. Warte ${Math.round(waitMs / 1000)}s...`);
-                    await sleep(waitMs);
+                    await sleep(Math.min(waitMs, maxWaitMs - (Date.now() - start)));
                     continue;
                 }
                 const cleanError = text.replace(/<\/?[^>]+(>|$)/g, "").trim();
