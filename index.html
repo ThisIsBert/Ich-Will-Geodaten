@@ -86,6 +86,7 @@
     const MAX_WAIT_GEOM_MS = 600000;
     const RETRY_BASE_DELAY_MS = 3000;
     const RETRY_MAX_DELAY_MS = 20000;
+    const RELATION_GEOM_AREA_THRESHOLD_DEG2 = 1.0;
 
     function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -201,6 +202,12 @@
         });
     }
 
+    function boundsFromElement(element) {
+        if (!element || !element.bounds) return null;
+        const { minlat, minlon, maxlat, maxlon } = element.bounds;
+        return L.latLngBounds([minlat, minlon], [maxlat, maxlon]);
+    }
+
     async function highlightObjectOnMap(type, id, domElement) {
         document.querySelectorAll('.object-item').forEach(i => i.classList.remove('selected'));
         domElement.classList.add('selected');
@@ -208,7 +215,52 @@
         loader.style.display = 'flex';
         resetSelection();
 
-        const query = `[out:json][timeout:180][maxsize:1073741824]; ${type}(${id}); out geom;`;
+        if (type === 'relation') {
+            const previewQuery = `[out:json][timeout:180][maxsize:134217728]; relation(${id}); out center bb;`;
+            try {
+                const previewJson = await fetchOverpassJson(previewQuery, {
+                    maxWaitMs: MAX_WAIT_GEOM_MS,
+                    onWaitMessage: (msg) => {
+                        loader.style.display = 'flex';
+                        document.getElementById('loading-text').innerText = msg;
+                    }
+                });
+                const relation = (previewJson.elements || []).find(el => el.type === 'relation' && el.id === id);
+                const bounds = boundsFromElement(relation);
+                if (bounds && bounds.isValid()) {
+                    if (highlightLayer) map.removeLayer(highlightLayer);
+                    highlightLayer = L.rectangle(bounds, {
+                        color: '#ff7800',
+                        weight: 2,
+                        opacity: 0.8,
+                        fillColor: '#ff7800',
+                        fillOpacity: 0.1
+                    }).addTo(map);
+                    map.fitBounds(bounds, { padding: [40, 40] });
+                    const latSpan = Math.abs(bounds.getNorth() - bounds.getSouth());
+                    const lonSpan = Math.abs(bounds.getEast() - bounds.getWest());
+                    const areaDeg2 = latSpan * lonSpan;
+                    if (areaDeg2 >= RELATION_GEOM_AREA_THRESHOLD_DEG2) {
+                        const shouldLoad = window.confirm(
+                            "Diese Relation ist sehr groß. Geometrie jetzt nachladen?"
+                        );
+                        if (!shouldLoad) {
+                            loader.style.display = 'none';
+                            document.getElementById('loading-text').innerText = "Fordere Daten an...";
+                            return;
+                        }
+                    }
+                }
+            } catch (err) {
+                errorBox.style.display = 'block';
+                errorBox.innerText = err.message;
+                loader.style.display = 'none';
+                document.getElementById('loading-text').innerText = "Fordere Daten an...";
+                return;
+            }
+        }
+
+        const query = `[out:json][timeout:180][maxsize:134217728]; ${type}(${id}); out geom;`;
         
         try {
             const osmJson = await fetchOverpassJson(query, {
