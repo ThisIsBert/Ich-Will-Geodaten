@@ -207,6 +207,22 @@
         return L.latLngBounds([minlat, minlon], [maxlat, maxlon]);
     }
 
+    function selectGeojsonFeatures(geojson, type, id) {
+        const features = geojson.features || [];
+        const targetId = `${type}/${id}`;
+        const exact = features.filter(f => f.id === targetId);
+        if (exact.length) return exact;
+        const byProps = features.filter(f => {
+            if (!f.properties) return false;
+            if (f.properties.id === targetId) return true;
+            return f.properties.osm_id === id && f.properties.osm_type === type;
+        });
+        if (byProps.length) return byProps;
+        const byOsmId = features.filter(f => f.properties && f.properties.osm_id === id);
+        if (byOsmId.length) return byOsmId;
+        return features;
+    }
+
     async function highlightObjectOnMap(type, id, domElement) {
         document.querySelectorAll('.object-item').forEach(i => i.classList.remove('selected'));
         domElement.classList.add('selected');
@@ -265,7 +281,7 @@
             });
 
             const geojson = osmtogeojson(osmJson);
-            geojson.features = geojson.features.filter(f => f.id === `${type}/${id}`);
+            geojson.features = selectGeojsonFeatures(geojson, type, id);
 
             if (geojson.features.length === 0) throw new Error("Keine Geometrie gefunden.");
 
