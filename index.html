@@ -23,6 +23,7 @@
         .search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
         .search-bar input { flex: 1; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
         .search-bar button { padding: 8px 12px; border: none; border-radius: 6px; background: #007bff; color: white; font-weight: 600; cursor: pointer; }
+        .search-results-select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; margin-bottom: 10px; display: none; }
         .export-bar { display: flex; gap: 10px; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; }
         .export-bar button { flex: 1; padding: 10px; border: none; border-radius: 5px; background: #007bff; color: white; font-weight: bold; cursor: pointer; opacity: 0.3; pointer-events: none; transition: 0.2s; }
         .export-bar button.active { opacity: 1; pointer-events: auto; }
@@ -53,6 +54,7 @@
             <input id="searchInput" type="text" placeholder="Ort suchen (z. B. Berlin)" />
             <button id="searchBtn">Suchen</button>
         </div>
+        <select id="searchResultsSelect" class="search-results-select" aria-label="Suchergebnisse auswählen"></select>
         <div class="export-bar">
             <button id="copyBtn" onclick="doExport('copy')">Kopieren</button>
             <button id="downBtn" onclick="doExport('download')">Download</button>
@@ -76,6 +78,7 @@
     const errorBox = document.getElementById('status-error');
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
+    const searchResultsSelect = document.getElementById('searchResultsSelect');
     let searchDebounceTimer = null;
 
     map.on('click', function(e) {
@@ -98,10 +101,42 @@
         document.getElementById('loading-text').innerText = message;
     }
 
+    function resetSearchResultsSelect() {
+        searchResultsSelect.innerHTML = '';
+        searchResultsSelect.style.display = 'none';
+    }
+
     function prepareForNewQuery() {
         resetSelection();
         errorBox.style.display = 'none';
         if (highlightLayer) map.removeLayer(highlightLayer);
+        resetSearchResultsSelect();
+    }
+
+    function applySearchResult(lat, lon) {
+        if (clickMarker) map.removeLayer(clickMarker);
+        clickMarker = L.circleMarker([lat, lon], { color: 'red', radius: 5, fillOpacity: 0.8 }).addTo(map);
+        map.setView([lat, lon], 16);
+        fetchObjects(lat, lon);
+    }
+
+    function populateSearchResultsSelect(results) {
+        resetSearchResultsSelect();
+        const placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.textContent = 'Bitte Treffer auswählen...';
+        placeholderOption.disabled = true;
+        placeholderOption.selected = true;
+        searchResultsSelect.appendChild(placeholderOption);
+
+        results.forEach((result, index) => {
+            const option = document.createElement('option');
+            option.value = `${result.lat},${result.lon}`;
+            option.textContent = result.display_name || `Treffer ${index + 1}`;
+            searchResultsSelect.appendChild(option);
+        });
+
+        searchResultsSelect.style.display = 'block';
     }
 
     async function searchPlace() {
@@ -115,7 +150,7 @@
         setLoading(true, "Suche Ort...");
 
         const encodedQuery = encodeURIComponent(query);
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&limit=1`;
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&limit=10`;
 
         try {
             const response = await fetch(url);
@@ -131,18 +166,27 @@
                 return;
             }
 
-            const { lat, lon } = results[0];
-            const latNum = Number(lat);
-            const lonNum = Number(lon);
-            if (!Number.isFinite(latNum) || !Number.isFinite(lonNum)) {
+            const parsedResults = results
+                .map((result) => {
+                    const latNum = Number(result.lat);
+                    const lonNum = Number(result.lon);
+                    if (!Number.isFinite(latNum) || !Number.isFinite(lonNum)) return null;
+                    return { ...result, lat: latNum, lon: lonNum };
+                })
+                .filter(Boolean);
+
+            if (parsedResults.length === 0) {
                 showError("Ungültige Koordinaten aus der Suche erhalten.");
                 return;
             }
 
-            if (clickMarker) map.removeLayer(clickMarker);
-            clickMarker = L.circleMarker([latNum, lonNum], { color: 'red', radius: 5, fillOpacity: 0.8 }).addTo(map);
-            map.setView([latNum, lonNum], 16);
-            fetchObjects(latNum, lonNum);
+            if (parsedResults.length === 1) {
+                resetSearchResultsSelect();
+                applySearchResult(parsedResults[0].lat, parsedResults[0].lon);
+                return;
+            }
+
+            populateSearchResultsSelect(parsedResults);
         } catch (err) {
             showError(err.message || "Unbekannter Fehler bei der Suche.");
         } finally {
@@ -168,6 +212,20 @@
             event.preventDefault();
             queueSearch();
         }
+    });
+
+    searchResultsSelect.addEventListener('change', (event) => {
+        const value = event.target.value;
+        if (!value) return;
+        const [latString, lonString] = value.split(',');
+        const lat = Number(latString);
+        const lon = Number(lonString);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+            showError("Ungültige Koordinaten aus der Auswahl erhalten.");
+            return;
+        }
+        errorBox.style.display = 'none';
+        applySearchResult(lat, lon);
     });
 
     const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter';
