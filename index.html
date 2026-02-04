@@ -334,7 +334,7 @@
         resultsDiv.innerHTML = '';
         elements.forEach(el => {
             const t = el.tags;
-            const name = t.name || t.highway || t.amenity || t.building || t.boundary || `ID: ${el.id}`;
+            const name = t['name:de'] || t['name:en'] || t.name || t.highway || t.amenity || t.building || t.boundary || `ID: ${el.id}`;
             const item = document.createElement('div');
             item.className = 'object-item';
             item.innerHTML = `<span class="object-title">[${el.type.toUpperCase()}] ${name}</span>
