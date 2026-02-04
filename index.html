@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSM Explorer - Retry on Busy</title>
+    <title>ThisIsBert's IchWillGeodaten</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -46,16 +46,15 @@
     </div>
 
     <div class="sidebar-header">
-        <h3 style="margin:0">OSM Selector</h3>
         <div class="export-bar">
-            <button id="copyBtn" onclick="doExport('copy')">📋 Kopieren</button>
-            <button id="downBtn" onclick="doExport('download')">💾 Download</button>
+            <button id="copyBtn" onclick="doExport('copy')">Kopieren</button>
+            <button id="downBtn" onclick="doExport('download')">Download</button>
         </div>
         <div id="status-error" class="error-hint"></div>
     </div>
     
     <div class="sidebar-content" id="results">
-        <p style="text-align:center; color: #888;">Klicke auf die Karte für Objekte in Deutschland.</p>
+        <p style="text-align:center; color: #888;">Klicke in der Karte auf den gewünschten Ort, um Geo-Daten zu laden</p>
     </div>
 </div>
 
@@ -189,7 +188,7 @@
             const item = document.createElement('div');
             item.className = 'object-item';
             item.innerHTML = `<span class="object-title">[${el.type.toUpperCase()}] ${name}</span>
-                <details><summary>Tags</summary><div class="tag-grid">
+                <details><summary>Mehr Info</summary><div class="tag-grid">
                 ${Object.entries(t).map(([k,v]) => `<b>${k}:</b><span>${v}</span>`).join('')}
                 </div></details>`;
             
@@ -241,14 +240,8 @@
                     const lonSpan = Math.abs(bounds.getEast() - bounds.getWest());
                     const areaDeg2 = latSpan * lonSpan;
                     if (areaDeg2 >= RELATION_GEOM_AREA_THRESHOLD_DEG2) {
-                        const shouldLoad = window.confirm(
-                            "Diese Relation ist sehr groß. Geometrie jetzt nachladen?"
-                        );
-                        if (!shouldLoad) {
-                            loader.style.display = 'none';
-                            document.getElementById('loading-text').innerText = "Fordere Daten an...";
-                            return;
-                        }
+                        loader.style.display = 'flex';
+                        document.getElementById('loading-text').innerText = "Große Geometrie wird geladen...";
                     }
                 }
             } catch (err) {
