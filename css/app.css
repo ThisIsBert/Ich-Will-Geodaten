@@ -13,6 +13,7 @@ body { margin: 0; padding: 0; display: flex; font-family: 'Segoe UI', sans-serif
 .search-bar button { padding: 8px 12px; border: none; border-radius: 6px; background: #007bff; color: white; font-weight: 600; cursor: pointer; }
 .search-results-select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; margin-bottom: 10px; display: none; }
 .export-bar { display: flex; gap: 10px; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; }
+.collection-bar { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; }
 .export-bar button { flex: 1; padding: 10px; border: none; border-radius: 5px; background: #007bff; color: white; font-weight: bold; cursor: pointer; opacity: 0.3; pointer-events: none; transition: 0.2s; }
 .export-bar button.active { opacity: 1; pointer-events: auto; }
 .export-bar button#copyBtn.active { background: #28a745; }
@@ -26,3 +27,6 @@ summary { cursor: pointer; color: #007bff; outline: none; }
 .tag-grid { display: grid; grid-template-columns: auto 1fr; gap: 3px 8px; padding: 5px; background: #fefefe; border: 1px solid #eee; margin-top: 5px; }
 
 .error-hint { color: #721c24; background: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 4px; font-size: 11px; margin-top: 10px; display: none; white-space: pre-wrap; }
+
+.collection-bar button { width: 100%; padding: 10px; border: none; border-radius: 5px; background: #6c757d; color: white; font-weight: bold; cursor: pointer; opacity: 0.3; pointer-events: none; transition: 0.2s; }
+.collection-bar button.active { background: #17a2b8; opacity: 1; pointer-events: auto; }

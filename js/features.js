@@ -15,18 +15,38 @@ import {
   renderList,
   resetSearchResultsSelect,
   selectItem,
+  setAddToCollectionButtonActive,
   setExportButtonsActive,
   setExportButtonTemporaryText,
   setLoading,
   showError,
   showResultMessage,
-  clearItemSelection
+  clearItemSelection,
+  updateCollectionButtonCount
 } from './ui.js';
-import { getSelectedObjectData, setSelectedObjectData } from './state.js';
+import {
+  addCollectionItem,
+  getCollectionItems,
+  getSelectedObjectData,
+  setSelectedObjectData
+} from './state.js';
+
+function getCollectionFeatureCollection() {
+  return {
+    type: 'FeatureCollection',
+    features: getCollectionItems()
+  };
+}
+
+function updateCollectionStateUi() {
+  const hasCollectionItems = getCollectionItems().length > 0;
+  setExportButtonsActive(hasCollectionItems);
+  updateCollectionButtonCount(getCollectionItems().length);
+}
 
 export function resetSelection() {
   setSelectedObjectData(null);
-  setExportButtonsActive(false);
+  setAddToCollectionButtonActive(false);
 }
 
 function prepareForNewQuery(map) {
@@ -166,7 +186,7 @@ export async function highlightObjectOnMap(map, type, id, domElement) {
 
     setSelectedObjectData(geojson);
     drawGeoJsonHighlight(map, geojson);
-    setExportButtonsActive(true);
+    setAddToCollectionButtonActive(true);
   } catch (err) {
     showError(err.message);
   } finally {
@@ -174,10 +194,25 @@ export async function highlightObjectOnMap(map, type, id, domElement) {
   }
 }
 
-export async function doExport(action) {
+export function addSelectedObjectToCollection() {
   const data = getSelectedObjectData();
-  if (!data) return;
+  if (!data || !Array.isArray(data.features) || data.features.length === 0) return;
 
+  const [selectedFeature] = data.features;
+  const collectionItems = getCollectionItems();
+  const hasAlready = collectionItems.some(item => item.id === selectedFeature.id);
+  if (!hasAlready) {
+    addCollectionItem(selectedFeature);
+  }
+
+  updateCollectionStateUi();
+}
+
+export async function doExport(action) {
+  const collectionItems = getCollectionItems();
+  if (collectionItems.length === 0) return;
+
+  const data = getCollectionFeatureCollection();
   const { copyBtn, downBtn } = getDomRefs();
   const btn = action === 'copy' ? copyBtn : downBtn;
   const jsonString = JSON.stringify(data, null, 2);
@@ -187,11 +222,10 @@ export async function doExport(action) {
       await navigator.clipboard.writeText(jsonString);
       setExportButtonTemporaryText(btn, 'Kopiert!');
     } else {
-      const blob = new Blob([jsonString], { type: 'application/json' });
+      const blob = new Blob([jsonString], { type: 'application/geo+json' });
       const a = document.createElement('a');
-      const name = data.features[0].id.replace('/', '_');
       a.href = URL.createObjectURL(blob);
-      a.download = `${name}.geojson`;
+      a.download = 'geojson-kollektion.geojson';
       a.click();
       setExportButtonTemporaryText(btn, 'Download OK');
     }
@@ -212,3 +246,5 @@ export async function onSearchSelection(map, value) {
   hideError();
   await applySearchResult(map, lat, lon);
 }
+
+updateCollectionStateUi();

@@ -5,6 +5,7 @@ const searchResultsSelect = document.getElementById('searchResultsSelect');
 const resultsDiv = document.getElementById('results');
 const copyBtn = document.getElementById('copyBtn');
 const downBtn = document.getElementById('downBtn');
+const addToCollectionBtn = document.getElementById('addToCollectionBtn');
 
 export function getDomRefs() {
   return {
@@ -12,7 +13,8 @@ export function getDomRefs() {
     searchResultsSelect,
     resultsDiv,
     copyBtn,
-    downBtn
+    downBtn,
+    addToCollectionBtn
   };
 }
 
@@ -103,6 +105,18 @@ export function selectItem(domElement) {
 export function setExportButtonsActive(isActive) {
   copyBtn.classList.toggle('active', isActive);
   downBtn.classList.toggle('active', isActive);
+}
+
+export function setAddToCollectionButtonActive(isActive) {
+  addToCollectionBtn.classList.toggle('active', isActive);
+}
+
+export function updateCollectionButtonCount(count) {
+  if (count > 0) {
+    addToCollectionBtn.innerText = `${count} Element(e) in der Kollektion`;
+    return;
+  }
+  addToCollectionBtn.innerText = 'Füge der Kollektion hinzu';
 }
 
 export function setExportButtonTemporaryText(button, text, timeoutMs = 2000) {
