@@ -1,9 +1,10 @@
 import { initMap } from './map.js';
-import { doExport, fetchObjects, onSearchSelection, searchPlace } from './features.js';
+import { doExport, fetchObjects, onSearchSelection, resetSelection, searchPlace } from './features.js';
 import { getSearchDebounceTimer, setSearchDebounceTimer } from './state.js';
 import { getDomRefs } from './ui.js';
 
 const map = initMap((lat, lng) => {
+  resetSelection();
   fetchObjects(map, lat, lng);
 });
 
