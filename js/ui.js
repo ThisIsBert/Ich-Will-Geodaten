@@ -6,6 +6,9 @@ const resultsDiv = document.getElementById('results');
 const copyBtn = document.getElementById('copyBtn');
 const downBtn = document.getElementById('downBtn');
 const addToCollectionBtn = document.getElementById('addToCollectionBtn');
+const helpBtn = document.getElementById('helpBtn');
+const helpOverlay = document.getElementById('helpOverlay');
+const closeHelpBtn = document.getElementById('closeHelpBtn');
 
 export function getDomRefs() {
   return {
@@ -125,4 +128,30 @@ export function setExportButtonTemporaryText(button, text, timeoutMs = 2000) {
   setTimeout(() => {
     button.innerText = originalText;
   }, timeoutMs);
+}
+
+export function initHelpOverlay() {
+  const closeOverlay = () => {
+    helpOverlay.classList.remove('active');
+    helpOverlay.setAttribute('aria-hidden', 'true');
+  };
+
+  helpBtn.addEventListener('click', () => {
+    helpOverlay.classList.add('active');
+    helpOverlay.setAttribute('aria-hidden', 'false');
+  });
+
+  closeHelpBtn.addEventListener('click', closeOverlay);
+
+  helpOverlay.addEventListener('click', (event) => {
+    if (event.target === helpOverlay) {
+      closeOverlay();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeOverlay();
+    }
+  });
 }

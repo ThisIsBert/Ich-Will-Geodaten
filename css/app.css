@@ -30,3 +30,89 @@ summary { cursor: pointer; color: #007bff; outline: none; }
 
 .collection-bar button { width: 100%; padding: 10px; border: none; border-radius: 5px; background: #6c757d; color: white; font-weight: bold; cursor: pointer; opacity: 0.3; pointer-events: none; transition: 0.2s; }
 .collection-bar button.active { background: #17a2b8; opacity: 1; pointer-events: auto; }
+
+#helpBtn {
+    position: fixed;
+    top: 16px;
+    right: 440px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: none;
+    background: #ff6b6b;
+    color: white;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    z-index: 1100;
+}
+
+#helpOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2500;
+    background: rgba(245, 251, 255, 0.68);
+}
+
+#helpOverlay.active {
+    display: block;
+}
+
+.help-note {
+    position: absolute;
+    margin: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 38px;
+    line-height: 1.2;
+    color: #2c3e50;
+    font-family: 'Caveat', 'Brush Script MT', 'Lucida Handwriting', cursive;
+    max-width: 490px;
+    text-shadow: 0 2px 0 rgba(255, 255, 255, 0.7);
+}
+
+.help-number {
+    width: 46px;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 143, 128, 0.92);
+    color: #fff;
+    font-size: 26px;
+    font-weight: 700;
+    font-family: 'Segoe UI', 'Trebuchet MS', sans-serif;
+    line-height: 1;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);
+    flex-shrink: 0;
+    transform: translateX(-1px);
+}
+
+.help-note-1 { top: 48%; left: 35%; transform: translate(-50%, -50%); max-width: 430px; }
+.help-note-2 { top: 390px; right: 18px; max-width: 360px; }
+.help-note-3 { top: 110px; right: 20px; max-width: 360px; }
+
+#closeHelpBtn {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: #2c3e50;
+    color: #fff;
+    font-size: 30px;
+    cursor: pointer;
+    z-index: 2;
+}
+
+@media (max-width: 1200px) {
+    .help-note { font-size: 32px; }
+    .help-number { width: 40px; height: 40px; font-size: 22px; }
+}
