@@ -1,5 +1,5 @@
 import { initMap } from './map.js';
-import { doExport, fetchObjects, onSearchSelection, resetSelection, searchPlace } from './features.js';
+import { addSelectedObjectToCollection, doExport, fetchObjects, onSearchSelection, resetSelection, searchPlace } from './features.js';
 import { getSearchDebounceTimer, setSearchDebounceTimer } from './state.js';
 import { getDomRefs } from './ui.js';
 
@@ -10,7 +10,7 @@ const map = initMap((lat, lng) => {
 
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
-const { searchResultsSelect, copyBtn, downBtn } = getDomRefs();
+const { searchResultsSelect, copyBtn, downBtn, addToCollectionBtn } = getDomRefs();
 
 function queueSearch() {
   const existingTimer = getSearchDebounceTimer();
@@ -40,3 +40,4 @@ searchResultsSelect.addEventListener('change', async (event) => {
 
 copyBtn.addEventListener('click', () => doExport('copy'));
 downBtn.addEventListener('click', () => doExport('download'));
+addToCollectionBtn.addEventListener('click', addSelectedObjectToCollection);
