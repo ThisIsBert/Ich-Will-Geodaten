@@ -1,7 +1,7 @@
 import { initMap } from './map.js';
 import { addSelectedObjectToCollection, doExport, fetchObjects, onSearchSelection, resetSelection, searchPlace } from './features.js';
 import { getSearchDebounceTimer, setSearchDebounceTimer } from './state.js';
-import { getDomRefs } from './ui.js';
+import { getDomRefs, initHelpOverlay } from './ui.js';
 
 const map = initMap((lat, lng) => {
   resetSelection();
@@ -11,6 +11,8 @@ const map = initMap((lat, lng) => {
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
 const { searchResultsSelect, copyBtn, downBtn, addToCollectionBtn } = getDomRefs();
+
+initHelpOverlay();
 
 function queueSearch() {
   const existingTimer = getSearchDebounceTimer();
