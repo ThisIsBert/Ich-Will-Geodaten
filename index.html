@@ -19,10 +19,44 @@
 <button id="helpBtn" aria-label="Hilfe anzeigen" title="Hilfe anzeigen">?</button>
 
 <div id="helpOverlay" aria-hidden="true">
-    <button id="closeHelpBtn" aria-label="Hilfe schließen" title="Hilfe schließen">×</button>
-    <p class="help-note help-note-1"><span class="help-number">1</span><span>Auf den gewünschten Ort in die Karte klicken</span></p>
-    <p class="help-note help-note-2"><span class="help-number">2</span><span>Nach gewünschtem Element suchen und anklicken</span></p>
-    <p class="help-note help-note-3"><span class="help-number">3</span><span>Der Kollektion hinzufügen und dann downloaden / in die Zwischenablage kopieren</span></p>
+    <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+        <button id="closeHelpBtn" aria-label="Hilfe schließen" title="Hilfe schließen">×</button>
+        <div class="help-header">
+            <p class="help-eyebrow">Kurzguide</p>
+            <h2 id="helpTitle">So holst du dir Geodaten in 3 Schritten</h2>
+            <p class="help-intro">Wähle erst einen Ort, dann das passende Objekt und exportiere es anschließend mit wenigen Klicks.</p>
+        </div>
+        <ol class="help-steps">
+            <li>
+                <span class="help-step-number">1</span>
+                <div>
+                    <strong>Ort festlegen.</strong>
+                    <p>In die Karte klicken oder oben links nach einer Stadt suchen.</p>
+                </div>
+            </li>
+            <li>
+                <span class="help-step-number">2</span>
+                <div>
+                    <strong>Objekt auswählen.</strong>
+                    <p>In der Trefferliste das gewünschte Element anklicken, um Details zu sehen.</p>
+                </div>
+            </li>
+            <li>
+                <span class="help-step-number">3</span>
+                <div>
+                    <strong>Export starten.</strong>
+                    <p>Zur Kollektion hinzufügen und dann als Download oder in die Zwischenablage kopieren.</p>
+                </div>
+            </li>
+        </ol>
+        <div class="help-tips">
+            <p class="help-tip-title">Tipp</p>
+            <ul>
+                <li>Bei mehreren Treffern hilft die Suche oben links für präzisere Ergebnisse.</li>
+                <li>Die Kollektion sammelt mehrere Objekte, bevor du sie exportierst.</li>
+            </ul>
+        </div>
+    </div>
 </div>
 
 <div id="sidebar">
