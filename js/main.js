@@ -1,5 +1,5 @@
 import { initMap } from './map.js';
-import { addSelectedObjectToCollection, doExport, fetchObjects, onSearchSelection, resetSelection, searchPlace } from './features.js';
+import { addSelectedObjectToCollection, doExport, fetchObjects, onSearchSelection, resetSelection, searchPlace } from './features-long-loads.js';
 import { getSearchDebounceTimer, setSearchDebounceTimer } from './state.js';
 import { getDomRefs, initHelpOverlay } from './ui.js';
 
