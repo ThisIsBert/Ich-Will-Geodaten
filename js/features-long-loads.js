@@ -17,22 +17,26 @@ import {
   resetSearchResultsSelect,
   selectItem,
   setAddToCollectionButtonActive,
+  setExportButtonsActive,
+  setExportButtonTemporaryText,
   setLoading,
   showError,
   showResultMessage,
   clearItemSelection
 } from './ui.js';
 import {
+  getCollectionItems,
+  getSelectedObjectData,
   setSelectedObjectData
 } from './state.js';
-import { addSelectedObjectToCollection, doExport } from './features.js';
+import { addSelectedObjectToCollection } from './features.js';
 
 let activeListController = null;
 let activeGeometryController = null;
 let listRequestId = 0;
 let geometryRequestId = 0;
 
-export { addSelectedObjectToCollection, doExport };
+export { addSelectedObjectToCollection };
 
 function abortController(controller) {
   if (controller && !controller.signal.aborted) {
@@ -109,9 +113,80 @@ function buildPhaseHandler(operation) {
   };
 }
 
+function getCollectionFeatureCollection() {
+  return {
+    type: 'FeatureCollection',
+    features: getCollectionItems()
+  };
+}
+
+function getSelectedFeatureCollection() {
+  const selectedData = getSelectedObjectData();
+  if (!selectedData || !Array.isArray(selectedData.features) || selectedData.features.length === 0) {
+    return null;
+  }
+  return {
+    type: 'FeatureCollection',
+    features: selectedData.features
+  };
+}
+
+function updateExportButtonsForCurrentState() {
+  const hasCollectionItems = getCollectionItems().length > 0;
+  const hasSelectedGeometry = Boolean(getSelectedFeatureCollection());
+  setExportButtonsActive(hasCollectionItems || hasSelectedGeometry);
+}
+
+function getExportPayload() {
+  const collectionItems = getCollectionItems();
+  if (collectionItems.length > 0) {
+    return {
+      data: getCollectionFeatureCollection(),
+      filename: 'geojson-kollektion.geojson'
+    };
+  }
+
+  const selectedData = getSelectedFeatureCollection();
+  if (selectedData) {
+    return {
+      data: selectedData,
+      filename: 'geojson-auswahl.geojson'
+    };
+  }
+
+  return null;
+}
+
 export function resetSelection() {
   setSelectedObjectData(null);
   setAddToCollectionButtonActive(false);
+  updateExportButtonsForCurrentState();
+}
+
+export async function doExport(action) {
+  const payload = getExportPayload();
+  if (!payload) return;
+
+  const { copyBtn, downBtn } = getDomRefs();
+  const btn = action === 'copy' ? copyBtn : downBtn;
+  const jsonString = JSON.stringify(payload.data, null, 2);
+
+  try {
+    if (action === 'copy') {
+      await navigator.clipboard.writeText(jsonString);
+      setExportButtonTemporaryText(btn, 'Kopiert!');
+      return;
+    }
+
+    const blob = new Blob([jsonString], { type: 'application/geo+json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = payload.filename;
+    a.click();
+    setExportButtonTemporaryText(btn, 'Download OK');
+  } catch {
+    alert('Export-Fehler');
+  }
 }
 
 function prepareForNewQuery(map) {
@@ -307,6 +382,7 @@ export async function highlightObjectOnMap(map, type, id, domElement) {
     setSelectedObjectData(geojson);
     drawGeoJsonHighlight(map, geojson);
     setAddToCollectionButtonActive(true);
+    updateExportButtonsForCurrentState();
   } catch (err) {
     if (!isAbortError(err) && operation.isCurrent()) {
       showError(err.message);
