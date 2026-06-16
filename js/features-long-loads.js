@@ -117,6 +117,7 @@ export function resetSelection() {
 function prepareForNewQuery(map) {
   abortListRequest();
   abortGeometryRequest();
+  setLoading(false);
   resetSelection();
   hideError();
   clearHighlightLayer(map);
