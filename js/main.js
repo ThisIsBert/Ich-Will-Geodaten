@@ -1,7 +1,22 @@
-import { initMap } from './map.js';
-import { addSelectedObjectToCollection, doExport, fetchObjects, onSearchSelection, resetSelection, searchPlace } from './features-long-loads.js';
-import { getSearchDebounceTimer, setSearchDebounceTimer } from './state.js';
-import { getDomRefs, initHelpOverlay } from './ui.js';
+const loader = document.getElementById('loading-overlay');
+if (loader && !document.getElementById('loading-actions')) {
+  const loadingActions = document.createElement('div');
+  loadingActions.id = 'loading-actions';
+  loadingActions.className = 'loading-actions';
+  loader.appendChild(loadingActions);
+}
+
+const [mapModule, featuresModule, stateModule, uiModule] = await Promise.all([
+  import('./map.js'),
+  import('./features-long-loads.js'),
+  import('./state.js'),
+  import('./ui.js')
+]);
+
+const { initMap } = mapModule;
+const { addSelectedObjectToCollection, doExport, fetchObjects, onSearchSelection, resetSelection, searchPlace } = featuresModule;
+const { getSearchDebounceTimer, setSearchDebounceTimer } = stateModule;
+const { getDomRefs, initHelpOverlay } = uiModule;
 
 const map = initMap((lat, lng) => {
   resetSelection();
