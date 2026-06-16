@@ -1,5 +1,6 @@
 const loader = document.getElementById('loading-overlay');
 const loadingText = document.getElementById('loading-text');
+const loadingActions = document.getElementById('loading-actions');
 const errorBox = document.getElementById('status-error');
 const searchResultsSelect = document.getElementById('searchResultsSelect');
 const resultsDiv = document.getElementById('results');
@@ -9,6 +10,8 @@ const addToCollectionBtn = document.getElementById('addToCollectionBtn');
 const helpBtn = document.getElementById('helpBtn');
 const helpOverlay = document.getElementById('helpOverlay');
 const closeHelpBtn = document.getElementById('closeHelpBtn');
+
+let cancelPendingLoadingPrompt = null;
 
 export function getDomRefs() {
   return {
@@ -39,21 +42,92 @@ export function hideError() {
   errorBox.style.display = 'none';
 }
 
+function clearLoadingActions() {
+  if (loadingActions) {
+    loadingActions.replaceChildren();
+  }
+  loader.classList.remove('loading-overlay--prompt');
+}
+
+function cancelLoadingPrompt() {
+  if (!cancelPendingLoadingPrompt) return;
+  const cancel = cancelPendingLoadingPrompt;
+  cancelPendingLoadingPrompt = null;
+  cancel();
+}
+
 export function setLoading(isLoading, message = 'Fordere Daten an...') {
+  cancelLoadingPrompt();
+  clearLoadingActions();
   loader.style.display = isLoading ? 'flex' : 'none';
   loadingText.innerText = message;
 }
 
+export function promptLargeGeometryLoad(message, detail = '') {
+  cancelLoadingPrompt();
+  clearLoadingActions();
+
+  return new Promise((resolve) => {
+    loader.style.display = 'flex';
+    loader.classList.add('loading-overlay--prompt');
+    loadingText.innerText = message;
+
+    const detailNode = document.createElement('p');
+    detailNode.className = 'loading-detail';
+    detailNode.textContent = detail;
+
+    const loadButton = document.createElement('button');
+    loadButton.type = 'button';
+    loadButton.className = 'loading-action loading-action--primary';
+    loadButton.textContent = 'Vollständige Geometrie laden';
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'loading-action';
+    cancelButton.textContent = 'Nur Vorschau behalten';
+
+    function finish(value) {
+      if (cancelPendingLoadingPrompt === finishCancel) {
+        cancelPendingLoadingPrompt = null;
+      }
+      clearLoadingActions();
+      resolve(value);
+    }
+
+    function finishCancel() {
+      finish(false);
+    }
+
+    loadButton.addEventListener('click', () => finish(true));
+    cancelButton.addEventListener('click', () => finish(false));
+
+    if (detail) {
+      loadingActions.appendChild(detailNode);
+    }
+    loadingActions.appendChild(loadButton);
+    loadingActions.appendChild(cancelButton);
+
+    cancelPendingLoadingPrompt = finishCancel;
+  });
+}
+
 export function showResultMessage(message) {
-  resultsDiv.innerHTML = `<p style="text-align:center;">${escapeHtml(message)}</p>`;
+  const p = document.createElement('p');
+  p.style.textAlign = 'center';
+  p.textContent = message;
+  resultsDiv.replaceChildren(p);
 }
 
 export function showInitialHint() {
-  resultsDiv.innerHTML = '<p style="text-align:center; color: #888;">Klicke in der Karte auf den gewünschten Ort, um Geo-Daten zu laden</p>';
+  const p = document.createElement('p');
+  p.style.textAlign = 'center';
+  p.style.color = '#888';
+  p.textContent = 'Klicke in der Karte auf den gewünschten Ort, um Geo-Daten zu laden';
+  resultsDiv.replaceChildren(p);
 }
 
 export function resetSearchResultsSelect() {
-  searchResultsSelect.innerHTML = '';
+  searchResultsSelect.replaceChildren();
   searchResultsSelect.style.display = 'none';
 }
 
@@ -77,16 +151,35 @@ export function populateSearchResultsSelect(results) {
 }
 
 export function renderList(elements, onSelectObject) {
-  resultsDiv.innerHTML = '';
+  resultsDiv.replaceChildren();
   elements.forEach(el => {
     const t = el.tags;
     const name = t['name:de'] || t['name:en'] || t.name || t.highway || t.amenity || t.building || t.boundary || `ID: ${el.id}`;
     const item = document.createElement('div');
     item.className = 'object-item';
-    item.innerHTML = `<span class="object-title">[${escapeHtml(el.type.toUpperCase())}] ${escapeHtml(name)}</span>
-      <details><summary>Mehr Info</summary><div class="tag-grid">
-      ${Object.entries(t).map(([k, v]) => `<b>${escapeHtml(k)}:</b><span>${escapeHtml(v)}</span>`).join('')}
-      </div></details>`;
+
+    const title = document.createElement('span');
+    title.className = 'object-title';
+    title.textContent = `[${el.type.toUpperCase()}] ${name}`;
+    item.appendChild(title);
+
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = 'Mehr Info';
+    details.appendChild(summary);
+
+    const tagGrid = document.createElement('div');
+    tagGrid.className = 'tag-grid';
+    Object.entries(t).forEach(([key, value]) => {
+      const keyNode = document.createElement('b');
+      keyNode.textContent = `${key}:`;
+      const valueNode = document.createElement('span');
+      valueNode.textContent = value;
+      tagGrid.appendChild(keyNode);
+      tagGrid.appendChild(valueNode);
+    });
+    details.appendChild(tagGrid);
+    item.appendChild(details);
 
     item.addEventListener('click', (e) => {
       if (e.target.tagName !== 'SUMMARY' && e.target.closest('details') === null) {
